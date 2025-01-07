@@ -111,7 +111,7 @@ void sdl_handle_event(chip8_t *emu, const SDL_Event *event)
             emu->keys[0x2] = true;
             break;
             // ...
-            // fill out for all hex keys 0x0..0xF
+            // TODO: fill out for all hex keys 0x0..0xF
         }
     }
     else if (event->type == SDL_KEYUP)
