@@ -13,19 +13,11 @@
 
 int main(int argc, char *argv[])
 {
-    // If user didn't provide a path to a ROM, show usage
-    if (argc < 2)
-    {
-        fprintf(stderr, "Usage: %s <path_to_CHIP8_ROM> [width] [height]\n", argv[0]);
-        return EXIT_FAILURE;
-    }
-
     // 1) Prepare a config_t structure
     config_t config;
     // Pass the command-line args so we can override default window size (640x320)
-    if (!sdl_parse_config_from_args(&config, argc, (const char **)argv))
+    if (!sdl_parse_config_from_args(&config, argc, argv))
     {
-        fprintf(stderr, "Error: Could not parse command-line arguments.\n");
         return EXIT_FAILURE;
     }
 
@@ -69,15 +61,17 @@ int main(int argc, char *argv[])
 
         // Perform one or more CHIP-8 CPU cycles, update timers, etc.
         // chip8_cycle(&emu);
-        // (If you want 60 Hz timers, you can track elapsed time with SDL_GetTicks() for chip8_update_timers)
 
         // Render the CHIP-8 display
         // sdl_render(&sdl, &emu);
 
+        // Update timers at 60 Hz
+        chip8_timers_tick_60hz(&emu);
+
         // Update screen only if the display has changed
         sdl_update_screen(&sdl, &emu, previous_frame);
 
-        // Optional small delay to manage CPU usage or timing
+        // Slight delay to prevent maxing out CPU
         SDL_Delay(1);
     }
 

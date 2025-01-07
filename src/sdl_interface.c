@@ -5,6 +5,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <getopt.h>
 #include "sdl_interface.h"
 
 /**
@@ -26,7 +27,7 @@ static void extract_rgba(uint32_t color, uint8_t *r, uint8_t *g, uint8_t *b, uin
 
 bool sdl_init(sdl_t *sdl, const config_t *config)
 {
-    //
+    // Initialize SDL with everything enabled (audio, video, etc.)
     if (SDL_Init(SDL_INIT_EVERYTHING) < 0)
     {
         SDL_Log("SDL could not initialize! SDL_Error: %s\n", SDL_GetError());
@@ -73,48 +74,6 @@ bool sdl_init(sdl_t *sdl, const config_t *config)
     SDL_SetRenderDrawColor(sdl->renderer, r, g, b, a);
     SDL_RenderClear(sdl->renderer);
     SDL_RenderPresent(sdl->renderer);
-
-    return true;
-}
-
-bool sdl_parse_config_from_args(config_t *config, int argc, const char *argv[])
-{
-    // 1) Set defaults
-    config->window_width = 640;
-    config->window_height = 320;
-    config->fg_color = 0xFFFFFFFF;
-    config->bg_color = 0x00000000;
-
-    // 2) If user provided width/height
-    if (argc >= 4)
-    {
-        char *endptr = NULL;
-        long w = strtol(argv[2], &endptr, 10);
-        if (endptr == argv[2] || w <= 0)
-        {
-            fprintf(stderr, "Invalid width: %s. Using default 640.\n", argv[2]);
-            w = 640;
-        }
-
-        endptr = NULL;
-        long h = strtol(argv[3], &endptr, 10);
-        if (endptr == argv[3] || h <= 0)
-        {
-            fprintf(stderr, "Invalid height: %s. Using default 320.\n", argv[3]);
-            h = 320;
-        }
-
-        // Overwrite only width, height
-        config->window_width = (uint32_t)w;
-        config->window_height = (uint32_t)h;
-    }
-
-    // 3) If user provided fg/bg colors
-    if (argc >= 6)
-    {
-        config->fg_color = strtoul(argv[4], NULL, 16);
-        config->bg_color = strtoul(argv[5], NULL, 16);
-    }
 
     return true;
 }

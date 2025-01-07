@@ -34,16 +34,6 @@ typedef struct
 bool sdl_init(sdl_t *sdl, const config_t *config);
 
 /**
- * @brief Parses command-line arguments to set the window size.
- *
- * @param config Pointer to config_t struct to be filled.
- * @param argc Number of command-line arguments.
- * @param argv Array of command-line argument strings.
- * @return true on success, false on error.
- */
-bool sdl_parse_config_from_args(config_t *config, const int argc, const char *argv[]);
-
-/**
  * @brief Renders the CHIP-8 display onto the SDL window.
  *
  * @param sdl Pointer to sdl_t struct.

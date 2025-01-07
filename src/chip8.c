@@ -3,6 +3,7 @@
  * @brief Implementation of the CHIP-8 core emulator.
  */
 
+#include <SDL2/SDL_timer.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -53,7 +54,7 @@ void chip8_cycle(chip8_t *emu)
     emu->pc += 2;
 }
 
-void chip8_update_timers(chip8_t *emu)
+void chip8_timers_decrement(chip8_t *emu)
 {
     if (emu->delay_timer > 0)
     {
@@ -63,6 +64,28 @@ void chip8_update_timers(chip8_t *emu)
     if (emu->sound_timer > 0)
     {
         emu->sound_timer--;
-        // Typically beep if sound_timer hits 0
+        // Possibly beep if sound_timer hits 0
+    }
+}
+
+void chip8_timers_tick_60hz(chip8_t *emu)
+{
+    static uint64_t lastCount = 0;
+    uint64_t now = SDL_GetPerformanceCounter();
+    uint64_t freq = SDL_GetPerformanceFrequency();
+
+    // Initialize lastCount the first time
+    if (lastCount == 0)
+        lastCount = now;
+
+    double elapsed = (double)(now - lastCount) / (double)freq;
+    double interval = 1.0 / 60.0; // ~16.6667 ms
+
+    // Decrement timers multiple times if behind
+    while (elapsed >= interval)
+    {
+        chip8_timers_decrement(emu);
+        elapsed -= interval;
+        lastCount += (uint64_t)(interval * freq);
     }
 }
