@@ -1,0 +1,27 @@
+# EditorConfig is awesome: https://editorconfig.org
+
+# Root EditorConfig file
+root = true
+
+# Global defaults
+[*]
+indent_style = space
+indent_size = 4
+end_of_line = lf
+charset = utf-8
+insert_final_newline = true
+trim_trailing_whitespace = true
+
+# Match C/C++ source files specifically
+[*.{c,h,cpp,hpp}]
+indent_style = space
+indent_size = 4
+end_of_line = lf
+charset = utf-8
+insert_final_newline = true
+trim_trailing_whitespace = true
+
+# For Markdown or other text-based files
+[*.md]
+max_line_length = off
+trim_trailing_whitespace = false

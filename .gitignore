@@ -1,0 +1,50 @@
+# Compiled object files
+*.o
+*.lo
+*.la
+*.al
+
+# Compiled Dynamic libraries
+*.so
+*.dylib
+
+# Compiled Static libraries
+*.a
+*.lib
+
+# Executables
+*.exe
+*.out
+*.app
+*.elf
+
+# Build directories (generic)
+build/
+bin/
+obj/
+
+# Backup and temporary files
+*~
+\#*\#
+*.bak
+*.swp
+*.swo
+.*.swp
+.*.swo
+
+# MacOS
+.DS_Store
+
+# Windows
+Thumbs.db
+
+# IDE / Editor specific
+.vscode/
+*.user
+*.sublime-workspace
+*.sublime-project
+
+# Debug / Profiling files
+*.gcda
+*.gcno
+*.gcov
