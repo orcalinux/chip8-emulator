@@ -9,6 +9,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <SDL2/SDL.h>
+#include "config.h"
 #include "chip8.h"
 
 /**
@@ -21,14 +22,6 @@ typedef struct
     SDL_Renderer *renderer; /**< SDL renderer handle */
     SDL_Texture *texture;   /**< SDL texture for the 64x32 display */
 } sdl_t;
-
-typedef struct
-{
-    uint32_t window_width;  /**< Width of the SDL window */
-    uint32_t window_height; /**< Height of the SDL window */
-    uint32_t fg_color;      /**< Foreground color (white) */
-    uint32_t bg_color;      /**< Background color (black) */
-} config_t;
 
 /**
  * @brief Initializes SDL, creates a window, renderer, and texture.
@@ -48,7 +41,7 @@ bool sdl_init(sdl_t *sdl, const config_t *config);
  * @param argv Array of command-line argument strings.
  * @return true on success, false on error.
  */
-bool set_config_from_args(config_t *config, const int argc, const char *argv[]);
+bool sdl_parse_config_from_args(config_t *config, const int argc, const char *argv[]);
 
 /**
  * @brief Renders the CHIP-8 display onto the SDL window.
@@ -65,6 +58,15 @@ void sdl_render(const sdl_t *sdl, const chip8_t *emu);
  * @param event SDL_Event to process.
  */
 void sdl_handle_event(chip8_t *emu, const SDL_Event *event);
+
+/**
+ * @brief Update only if there's a change in the display array.
+ *
+ * @param sdl Pointer to sdl_t struct.
+ * @param emu Pointer to chip8_t struct containing display state.
+ * @param previous_frame A 64*32 bool array tracking previous state.
+ */
+void sdl_update_screen(const sdl_t *sdl, const chip8_t *emu, bool *previous_frame);
 
 /**
  * @brief Cleans up and destroys SDL window, renderer, and texture.

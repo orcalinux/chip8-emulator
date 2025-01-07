@@ -11,6 +11,7 @@
 
 #include <stdint.h>
 #include <stdbool.h>
+#include "config.h"
 
 /**
  * @struct chip8_t
@@ -28,6 +29,7 @@ typedef struct
     uint8_t sound_timer;   /**< Sound timer */
     bool display[64 * 32]; /**< Monochrome display (64x32) */
     bool keys[16];         /**< Input keys 0x0..0xF */
+    config_t config;       /**< Configuration settings */
 } chip8_t;
 
 #ifdef __cplusplus

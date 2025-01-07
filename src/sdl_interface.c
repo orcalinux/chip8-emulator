@@ -77,7 +77,7 @@ bool sdl_init(sdl_t *sdl, const config_t *config)
     return true;
 }
 
-bool set_config_from_args(config_t *config, int argc, const char *argv[])
+bool sdl_parse_config_from_args(config_t *config, int argc, const char *argv[])
 {
     // 1) Set defaults
     config->window_width = 640;
@@ -168,6 +168,39 @@ void sdl_handle_event(chip8_t *emu, const SDL_Event *event)
             // ...
         }
     }
+}
+
+void sdl_update_screen(const sdl_t *sdl, const chip8_t *emu, bool *previous_frame)
+{
+    bool changed = false;
+
+    for (int i = 0; i < 64 * 32; i++)
+    {
+        if (emu->display[i] != previous_frame[i])
+        {
+            changed = true;
+            break;
+        }
+    }
+
+    if (!changed)
+    {
+        // No difference, skip rendering
+        return;
+    }
+
+    // If changed, build new pixel buffer
+    uint32_t pixels[64 * 32];
+    for (int i = 0; i < 64 * 32; i++)
+    {
+        previous_frame[i] = emu->display[i]; // Update previous_frame
+        pixels[i] = emu->display[i] ? emu->config.fg_color : emu->config.bg_color;
+    }
+
+    SDL_UpdateTexture(sdl->texture, NULL, pixels, 64 * sizeof(uint32_t));
+    SDL_RenderClear(sdl->renderer);
+    SDL_RenderCopy(sdl->renderer, sdl->texture, NULL, NULL);
+    SDL_RenderPresent(sdl->renderer);
 }
 
 void sdl_cleanup(sdl_t *sdl)

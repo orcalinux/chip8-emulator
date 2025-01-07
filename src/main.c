@@ -23,15 +23,15 @@ int main(int argc, char *argv[])
     // 1) Prepare a config_t structure
     config_t config;
     // Pass the command-line args so we can override default window size (640x320)
-    if (!set_config_from_args(&config, argc, (const char **)argv))
+    if (!sdl_parse_config_from_args(&config, argc, (const char **)argv))
     {
         fprintf(stderr, "Error: Could not parse command-line arguments.\n");
         return EXIT_FAILURE;
     }
 
     // 2) Initialize CHIP-8 emulator state
-    // chip8_t emu;
-    // chip8_init(&emu);
+    chip8_t emu;
+    chip8_init(&emu);
 
     // Load the ROM from argv[1] if you haven't already
     // if (!chip8_load_program(&emu, argv[1]))
@@ -50,6 +50,8 @@ int main(int argc, char *argv[])
 
     // 4) Main loop
     bool running = true;
+    bool previous_frame[64 * 32] = {false};
+
     while (running)
     {
         SDL_Event event;
@@ -71,6 +73,9 @@ int main(int argc, char *argv[])
 
         // Render the CHIP-8 display
         // sdl_render(&sdl, &emu);
+
+        // Update screen only if the display has changed
+        sdl_update_screen(&sdl, &emu, previous_frame);
 
         // Optional small delay to manage CPU usage or timing
         SDL_Delay(1);
