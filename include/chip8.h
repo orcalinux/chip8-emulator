@@ -14,6 +14,32 @@
 #include "config.h"
 
 /**
+ * @brief CHIP-8 fontset for hexadecimal digits 0-F.
+ *
+ * Standard 4x5 fontset for digits 0-F, each character is 5 bytes (rows).
+ * Typically loaded into memory starting at address 0x000.
+ * Each byte represents one row of 8 pixels (only 4 or 5 are used).
+ */
+static const uint8_t chip8_fontset[80] = {
+    0xF0, 0x90, 0x90, 0x90, 0xF0, // 0
+    0x20, 0x60, 0x20, 0x20, 0x70, // 1
+    0xF0, 0x10, 0xF0, 0x80, 0xF0, // 2
+    0xF0, 0x10, 0xF0, 0x10, 0xF0, // 3
+    0x90, 0x90, 0xF0, 0x10, 0x10, // 4
+    0xF0, 0x80, 0xF0, 0x10, 0xF0, // 5
+    0xF0, 0x80, 0xF0, 0x90, 0xF0, // 6
+    0xF0, 0x10, 0x20, 0x40, 0x40, // 7
+    0xF0, 0x90, 0xF0, 0x90, 0xF0, // 8
+    0xF0, 0x90, 0xF0, 0x10, 0xF0, // 9
+    0xF0, 0x90, 0xF0, 0x90, 0x90, // A
+    0xE0, 0x90, 0xE0, 0x90, 0xE0, // B
+    0xF0, 0x80, 0x80, 0x80, 0xF0, // C
+    0xE0, 0x90, 0x90, 0x90, 0xE0, // D
+    0xF0, 0x80, 0xF0, 0x80, 0xF0, // E
+    0xF0, 0x80, 0xF0, 0x80, 0x80  // F
+};
+
+/**
  * @enum chip8_state_t
  * @brief Represents the current state of the CHIP-8 emulator.
  */
@@ -56,7 +82,7 @@ typedef struct
     /* Largest array last: 4K memory */
     uint8_t memory[4096]; /**< 4096 bytes */
 
-    /* Finally, the config structure (280 bytes) */
+    /* the config structure (280 bytes) */
     config_t config; /**< Aligned to 8 bytes to avoid extra padding */
 } chip8_t;
 
@@ -69,8 +95,9 @@ extern "C"
      * @brief Initializes the CHIP-8 emulator state.
      *
      * @param emu Pointer to the chip8_t struct to be initialized.
+     * @return true on success, false on error.
      */
-    void chip8_init(chip8_t *emu);
+    bool chip8_init(chip8_t *emu);
 
     /**
      * @brief Loads a CHIP-8 program into memory.

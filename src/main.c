@@ -83,9 +83,6 @@ int main(int argc, char *argv[])
     bool running = true;
     bool previous_frame[64 * 32] = {false};
 
-    // We'll assume the emulator state starts as RUNNING:
-    emu.state = CHIP8_RUNNING;
-
     while (running)
     {
         // Declare the SDL_Event variable 'event' here

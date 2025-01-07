@@ -10,15 +10,27 @@
 
 #include "chip8.h"
 
-void chip8_init(chip8_t *emu)
+bool chip8_init(chip8_t *emu)
 {
+    // Clear the entire emulator struct
     memset(emu, 0, sizeof(chip8_t));
 
-    // CHIP-8 typically starts the PC at 0x200
+    // Set default emulator state
+    emu->state = CHIP8_RUNNING;
+
+    // Program counter starts at 0x200 (standard for most CHIP-8 programs)
     emu->pc = 0x200;
 
-    // TODO: Load fontset, if needed, etc.
-    // ...
+    // Load the fontset into memory starting at 0x000
+    //    Typically 80 bytes for digits 0-F
+    memcpy(emu->memory, chip8_fontset, sizeof(chip8_fontset));
+
+    // Stack pointer, timers, and other fields default to 0 from memset
+    emu->sp = 0;
+    emu->delay_timer = 0;
+    emu->sound_timer = 0;
+
+    return true;
 }
 
 bool chip8_load_program(chip8_t *emu, const char *filepath)

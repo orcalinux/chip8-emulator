@@ -25,6 +25,42 @@ static void extract_rgba(uint32_t color, uint8_t *r, uint8_t *g, uint8_t *b, uin
     *a = (color & 0xFF) ? (color & 0xFF) : 0xFF; // Default to opaque if alpha is 0
 }
 
+/**
+ * @brief Displays a confirmation dialog for quitting the emulator.
+ *
+ * This function uses an SDL message box with two buttons to ask the user
+ * whether to quit or continue execution. If the user selects "Quit", the
+ * function returns true; otherwise, it returns false.
+ *
+ * @return true if the user confirms quitting, false otherwise
+ */
+static bool confirm_quit()
+{
+    const SDL_MessageBoxButtonData buttons[] = {
+        {SDL_MESSAGEBOX_BUTTON_RETURNKEY_DEFAULT, 1, "Quit"},
+        {SDL_MESSAGEBOX_BUTTON_ESCAPEKEY_DEFAULT, 0, "Continue"}};
+
+    const SDL_MessageBoxData messageboxdata = {
+        SDL_MESSAGEBOX_WARNING,
+        NULL,
+        "Quit Emulator",
+        "Are you sure you want to quit?",
+        SDL_arraysize(buttons),
+        buttons,
+        NULL};
+
+    int buttonid;
+    if (SDL_ShowMessageBox(&messageboxdata, &buttonid) == 0)
+    {
+        return (buttonid == 1);
+    }
+    else
+    {
+        SDL_Log("Error displaying message box: %s\n", SDL_GetError());
+        return false;
+    }
+}
+
 bool sdl_init(sdl_t *sdl, const config_t *config)
 {
     // Initialize SDL with everything enabled (audio, video, etc.)
@@ -103,13 +139,14 @@ void sdl_handle_event(chip8_t *emu, const SDL_Event *event)
     switch (event->type)
     {
     case SDL_QUIT:
-        // The user closed the window or pressed Alt+F4
         emu->state = CHIP8_STOPPED;
         break;
 
+    // Handle keys pressed (KEYDOWN)
     case SDL_KEYDOWN:
         switch (event->key.keysym.sym)
         {
+        // CHIP-8 Keypad Mapping
         case SDLK_1:
             emu->keys[0x1] = true;
             break;
@@ -122,46 +159,110 @@ void sdl_handle_event(chip8_t *emu, const SDL_Event *event)
         case SDLK_4:
             emu->keys[0xC] = true;
             break;
-        // ... Fill out the rest of the chip-8 keys:
-        //   1 2 3 C
-        //   4 5 6 D
-        //   7 8 9 E
-        //   A 0 B F
-        // Possibly mapping to (SDLK_xxx) as you see fit
-
-        // Handle a custom quit key if desired:
         case SDLK_q:
-            emu->state = CHIP8_STOPPED;
+            emu->keys[0x4] = true;
+            break;
+        case SDLK_w:
+            emu->keys[0x5] = true;
+            break;
+        case SDLK_e:
+            emu->keys[0x6] = true;
+            break;
+        case SDLK_r:
+            emu->keys[0xD] = true;
+            break;
+        case SDLK_a:
+            emu->keys[0x7] = true;
+            break;
+        case SDLK_s:
+            emu->keys[0x8] = true;
+            break;
+        case SDLK_d:
+            emu->keys[0x9] = true;
+            break;
+        case SDLK_f:
+            emu->keys[0xE] = true;
+            break;
+        case SDLK_z:
+            emu->keys[0xA] = true;
+            break;
+        case SDLK_x:
+            emu->keys[0x0] = true;
+            break;
+        case SDLK_c:
+            emu->keys[0xB] = true;
+            break;
+        case SDLK_v:
+            emu->keys[0xF] = true;
+            break;
+
+        // Handle Quit
+        case SDLK_ESCAPE:
+            if (confirm_quit())
+            {
+                emu->state = CHIP8_STOPPED;
+            }
+            break;
+
+        // Handle keys released (KEYUP)
+        case SDL_KEYUP:
+            switch (event->key.keysym.sym)
+            {
+            case SDLK_1:
+                emu->keys[0x1] = false;
+                break;
+            case SDLK_2:
+                emu->keys[0x2] = false;
+                break;
+            case SDLK_3:
+                emu->keys[0x3] = false;
+                break;
+            case SDLK_4:
+                emu->keys[0xC] = false;
+                break;
+            case SDLK_q:
+                emu->keys[0x4] = false;
+                break;
+            case SDLK_w:
+                emu->keys[0x5] = false;
+                break;
+            case SDLK_e:
+                emu->keys[0x6] = false;
+                break;
+            case SDLK_r:
+                emu->keys[0xD] = false;
+                break;
+            case SDLK_a:
+                emu->keys[0x7] = false;
+                break;
+            case SDLK_s:
+                emu->keys[0x8] = false;
+                break;
+            case SDLK_d:
+                emu->keys[0x9] = false;
+                break;
+            case SDLK_f:
+                emu->keys[0xE] = false;
+                break;
+            case SDLK_z:
+                emu->keys[0xA] = false;
+                break;
+            case SDLK_x:
+                emu->keys[0x0] = false;
+                break;
+            case SDLK_c:
+                emu->keys[0xB] = false;
+                break;
+            case SDLK_v:
+                emu->keys[0xF] = false;
+                break;
+            }
+            break;
+
+        default:
+            // Handle other events (mouse movement, etc.)
             break;
         }
-        break;
-
-    case SDL_KEYUP:
-        switch (event->key.keysym.sym)
-        {
-        case SDLK_1:
-            emu->keys[0x1] = false;
-            break;
-        case SDLK_2:
-            emu->keys[0x2] = false;
-            break;
-        case SDLK_3:
-            emu->keys[0x3] = false;
-            break;
-        case SDLK_4:
-            emu->keys[0xC] = false;
-            break;
-            // ... similarly release keys for
-            //   4 5 6 D
-            //   7 8 9 E
-            //   A 0 B F
-            // or handle a custom "un-quit" (though that’s unusual)
-        }
-        break;
-
-    default:
-        // Other event types (mouse movement, etc.) can be handled here
-        break;
     }
 }
 
