@@ -7,6 +7,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
 #include "chip8.h"
 
 void chip8_init(chip8_t *emu)
@@ -16,7 +17,7 @@ void chip8_init(chip8_t *emu)
     // CHIP-8 typically starts the PC at 0x200
     emu->pc = 0x200;
 
-    // Load fontset, if needed, etc.
+    // TODO: Load fontset, if needed, etc.
     // ...
 }
 

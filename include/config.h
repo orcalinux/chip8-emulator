@@ -1,8 +1,19 @@
+/**
+ * @file config.h
+ * @brief Emulator configuration parser.
+ *
+ * This header file declares the functions and data structures for parsing
+ */
+
 #ifndef CONFIG_H
 #define CONFIG_H
 
 #include <stdint.h>
 
+/**
+ * @struct config_t
+ * @brief Holds emulator configuration settings.
+ */
 typedef struct
 {
     uint32_t window_width;  /**< Width of the SDL window */
@@ -10,6 +21,7 @@ typedef struct
     uint32_t fg_color;      /**< Foreground color (white) */
     uint32_t bg_color;      /**< Background color (black) */
     uint32_t scale_factor;  /**< Scale factor for enlarging the CHIP-8 display */
+    char rom_path[256];     /**< Path to the CHIP-8 ROM file */
 } config_t;
 
 /**

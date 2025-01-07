@@ -1,6 +1,8 @@
 /**
  * @file sdl_interface.h
  * @brief SDL-related functions to display CHIP-8 graphics and handle input.
+ *
+ * This header file declares functions for initializing SDL, rendering the
  */
 
 #ifndef SDL_INTERFACE_H
