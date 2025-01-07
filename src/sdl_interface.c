@@ -7,6 +7,23 @@
 #include <stdlib.h>
 #include "sdl_interface.h"
 
+/**
+ * @brief Extracts RGBA components from a 32-bit color value.
+ *
+ * @param color 32-bit color value.
+ * @param r Pointer to red component.
+ * @param g Pointer to green component.
+ * @param b Pointer to blue component.
+ * @param a Pointer to alpha component.
+ */
+static void extract_rgba(uint32_t color, uint8_t *r, uint8_t *g, uint8_t *b, uint8_t *a)
+{
+    *r = (color >> 24) & 0xFF;                   // Extract red component
+    *g = (color >> 16) & 0xFF;                   // Extract green component
+    *b = (color >> 8) & 0xFF;                    // Extract blue component
+    *a = (color & 0xFF) ? (color & 0xFF) : 0xFF; // Default to opaque if alpha is 0
+}
+
 bool sdl_init(sdl_t *sdl, const config_t *config)
 {
     //
@@ -48,27 +65,34 @@ bool sdl_init(sdl_t *sdl, const config_t *config)
         return false;
     }
 
-    // Clear the renderer
-    SDL_SetRenderDrawColor(sdl->renderer, 0, 0, 0, 255); // black RGBA
-    SDL_RenderClear(sdl->renderer);                      // clear the renderer
-    SDL_RenderPresent(sdl->renderer);                    // present the renderer
+    // Extract background color from config
+    uint8_t r, g, b, a;
+    extract_rgba(config->bg_color, &r, &g, &b, &a);
+
+    // Clear the renderer using bg_color
+    SDL_SetRenderDrawColor(sdl->renderer, r, g, b, a);
+    SDL_RenderClear(sdl->renderer);
+    SDL_RenderPresent(sdl->renderer);
 
     return true;
 }
 
-bool set_config_from_args(config_t *config, const int argc, const char *argv[])
+bool set_config_from_args(config_t *config, int argc, const char *argv[])
 {
-    *config = (config_t){
-        .window_width = 640,
-        .window_height = 320};
+    // 1) Set defaults
+    config->window_width = 640;
+    config->window_height = 320;
+    config->fg_color = 0xFFFFFFFF;
+    config->bg_color = 0x00000000;
 
+    // 2) If user provided width/height
     if (argc >= 4)
     {
         char *endptr = NULL;
         long w = strtol(argv[2], &endptr, 10);
         if (endptr == argv[2] || w <= 0)
         {
-            fprintf(stderr, "Invalid window width: %s. Using default 640.\n", argv[2]);
+            fprintf(stderr, "Invalid width: %s. Using default 640.\n", argv[2]);
             w = 640;
         }
 
@@ -76,13 +100,20 @@ bool set_config_from_args(config_t *config, const int argc, const char *argv[])
         long h = strtol(argv[3], &endptr, 10);
         if (endptr == argv[3] || h <= 0)
         {
-            fprintf(stderr, "Invalid window height: %s. Using default 320.\n", argv[3]);
+            fprintf(stderr, "Invalid height: %s. Using default 320.\n", argv[3]);
             h = 320;
         }
 
-        *config = (config_t){
-            .window_width = (uint32_t)w,
-            .window_height = (uint32_t)h};
+        // Overwrite only width, height
+        config->window_width = (uint32_t)w;
+        config->window_height = (uint32_t)h;
+    }
+
+    // 3) If user provided fg/bg colors
+    if (argc >= 6)
+    {
+        config->fg_color = strtoul(argv[4], NULL, 16);
+        config->bg_color = strtoul(argv[5], NULL, 16);
     }
 
     return true;
