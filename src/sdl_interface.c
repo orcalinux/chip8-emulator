@@ -59,7 +59,7 @@ bool sdl_init(sdl_t *sdl, const config_t *config)
     sdl->texture = SDL_CreateTexture(sdl->renderer,
                                      SDL_PIXELFORMAT_ARGB8888,
                                      SDL_TEXTUREACCESS_STREAMING,
-                                     64, 32);
+                                     config->window_width, config->window_height);
     if (!sdl->texture)
     {
         SDL_Log("Texture could not be created! SDL_Error: %s\n", SDL_GetError());
@@ -100,8 +100,14 @@ void sdl_render(const sdl_t *sdl, const chip8_t *emu)
 
 void sdl_handle_event(chip8_t *emu, const SDL_Event *event)
 {
-    if (event->type == SDL_KEYDOWN)
+    switch (event->type)
     {
+    case SDL_QUIT:
+        // The user closed the window or pressed Alt+F4
+        emu->state = CHIP8_STOPPED;
+        break;
+
+    case SDL_KEYDOWN:
         switch (event->key.keysym.sym)
         {
         case SDLK_1:
@@ -110,12 +116,27 @@ void sdl_handle_event(chip8_t *emu, const SDL_Event *event)
         case SDLK_2:
             emu->keys[0x2] = true;
             break;
-            // ...
-            // TODO: fill out for all hex keys 0x0..0xF
+        case SDLK_3:
+            emu->keys[0x3] = true;
+            break;
+        case SDLK_4:
+            emu->keys[0xC] = true;
+            break;
+        // ... Fill out the rest of the chip-8 keys:
+        //   1 2 3 C
+        //   4 5 6 D
+        //   7 8 9 E
+        //   A 0 B F
+        // Possibly mapping to (SDLK_xxx) as you see fit
+
+        // Handle a custom quit key if desired:
+        case SDLK_q:
+            emu->state = CHIP8_STOPPED;
+            break;
         }
-    }
-    else if (event->type == SDL_KEYUP)
-    {
+        break;
+
+    case SDL_KEYUP:
         switch (event->key.keysym.sym)
         {
         case SDLK_1:
@@ -124,8 +145,23 @@ void sdl_handle_event(chip8_t *emu, const SDL_Event *event)
         case SDLK_2:
             emu->keys[0x2] = false;
             break;
-            // ...
+        case SDLK_3:
+            emu->keys[0x3] = false;
+            break;
+        case SDLK_4:
+            emu->keys[0xC] = false;
+            break;
+            // ... similarly release keys for
+            //   4 5 6 D
+            //   7 8 9 E
+            //   A 0 B F
+            // or handle a custom "un-quit" (though that’s unusual)
         }
+        break;
+
+    default:
+        // Other event types (mouse movement, etc.) can be handled here
+        break;
     }
 }
 

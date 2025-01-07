@@ -22,6 +22,7 @@ typedef struct
     uint32_t bg_color;      /**< Background color (black) */
     uint32_t scale_factor;  /**< Scale factor for enlarging the CHIP-8 display */
     char rom_path[256];     /**< Path to the CHIP-8 ROM file */
+    uint8_t pad[4];         /**< Padding to ensure 8-byte alignment */
 } config_t;
 
 /**
