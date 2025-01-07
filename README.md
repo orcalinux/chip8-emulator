@@ -30,7 +30,6 @@ A **CHIP-8 emulator** written in C, utilizing SDL2 for graphics and input. This 
     - [How to Contribute](#how-to-contribute)
     - [Coding Standards](#coding-standards)
   - [License](#license)
-  - [Acknowledgements](#acknowledgements)
 
 ---
 
@@ -261,11 +260,3 @@ Contributions are welcome! Whether you're fixing bugs, improving documentation, 
 ## License
 
 This project is licensed under the [MIT License](LICENSE). You are free to use, modify, and distribute it as per the terms of the license.
-
----
-
-## Acknowledgements
-
--   **CHIP-8**: Thanks to the original creators for designing a simple yet powerful virtual machine.
--   **SDL2 Community**: For providing a robust library for multimedia handling.
--   **Open-Source Contributors**: For their invaluable contributions to the tools and libraries that make projects like this possible.
