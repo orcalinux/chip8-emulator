@@ -24,6 +24,7 @@ typedef struct
     uint32_t fg_color;      /**< Foreground color (white) */
     uint32_t bg_color;      /**< Background color (black) */
     uint32_t scale_factor;  /**< Scale factor for enlarging the CHIP-8 display */
+    uint8_t padding[4];     /**< Padding to align to 8 bytes */
 } display_config_t;
 
 /**

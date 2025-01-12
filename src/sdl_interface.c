@@ -6,7 +6,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <getopt.h>
+
 #include "sdl_interface.h"
+#include "cli_logger.h"
 
 /**
  * @brief Extracts RGBA components from a 32-bit color value.
@@ -201,6 +203,20 @@ void sdl_handle_event(chip8_t *emu, const SDL_Event *event)
             if (confirm_quit())
             {
                 emu->state = CHIP8_STOPPED;
+            }
+            break;
+
+        // Handle Pause/Resume
+        case SDLK_SPACE:
+            if (emu->state == CHIP8_RUNNING)
+            {
+                emu->state = CHIP8_PAUSED;
+                print_info("CHIP-8 Emulator State: %s", "PAUSED");
+            }
+            else if (emu->state == CHIP8_PAUSED)
+            {
+                emu->state = CHIP8_RUNNING;
+                print_info("CHIP-8 Emulator State: %s", "RUNNING");
             }
             break;
 

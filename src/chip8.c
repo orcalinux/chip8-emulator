@@ -8,6 +8,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "cli_logger.h"
 #include "chip8.h"
 #include "audio.h"
 
@@ -20,7 +21,7 @@ bool chip8_init(chip8_t *emu)
     emu->state = CHIP8_RUNNING;
 
     // Program counter starts at 0x200 (standard for most CHIP-8 programs)
-    emu->pc = 0x200;
+    emu->pc = CHIP8_ROM_ENTRY_POINT;
 
     // Load the fontset into memory starting at 0x000
     //    Typically 80 bytes for digits 0-F
@@ -39,20 +40,43 @@ bool chip8_load_program(chip8_t *emu, const char *filepath)
     FILE *fp = fopen(filepath, "rb");
     if (!fp)
     {
-        fprintf(stderr, "Failed to open ROM file: %s\n", filepath);
+        print_error("Failed to open ROM file: %s\n", filepath);
         return false;
     }
 
-    // Read file into memory starting at 0x200
-    size_t bytes_read = fread(&emu->memory[0x200], 1, 4096 - 0x200, fp);
+    // Determine the file size
+    fseek(fp, 0, SEEK_END);     // Move to the end of the file
+    long file_size = ftell(fp); // Get the current file position (file size in bytes)
+    rewind(fp);                 // Reset file pointer to the beginning
+
+    // Validate the file size against available memory space
+    const size_t max_rom_size = CHIP8_MEMORY_SIZE - CHIP8_ROM_ENTRY_POINT; // 4096 - 512 = 3584
+
+    if (file_size < 0) // Check for error in ftell
+    {
+        print_error("Error determining ROM file size.\n");
+        fclose(fp);
+        return false;
+    }
+
+    if ((size_t)file_size > max_rom_size)
+    {
+        print_warning("ROM file too large: %ld bytes (max allowed: %zu bytes)\n", file_size, max_rom_size);
+        fclose(fp);
+        return false;
+    }
+
+    // Read the file into memory starting at the entry point (0x200)
+    size_t bytes_read = fread(&emu->memory[CHIP8_ROM_ENTRY_POINT], 1, (size_t)file_size, fp);
     fclose(fp);
 
-    if (bytes_read <= 0)
+    if (bytes_read != (size_t)file_size)
     {
-        fprintf(stderr, "No data read from ROM: %s\n", filepath);
+        print_error("Failed to read the entire ROM file: %s\n", filepath);
         return false;
     }
 
+    print_info("Loaded ROM: %s (%ld bytes)\n", filepath, file_size);
     return true;
 }
 

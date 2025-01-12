@@ -13,6 +13,10 @@
 #include <stdbool.h>
 #include "config.h"
 
+// CHIP-8 architectural constants
+static const uint16_t CHIP8_MEMORY_SIZE = 4096;      // Total memory size in bytes
+static const uint16_t CHIP8_ROM_ENTRY_POINT = 0x200; // Entry point for ROM loading
+
 /**
  * @brief CHIP-8 fontset for hexadecimal digits 0-F.
  *

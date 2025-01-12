@@ -129,6 +129,10 @@ int main(int argc, char *argv[])
             {
                 running = false;
             }
+
+            // If the emulator is paused, wait for a key press
+            if (emu.state == CHIP8_PAUSED)
+                continue;
         }
 
         // If still running, do one CPU cycle
