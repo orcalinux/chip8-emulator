@@ -6,10 +6,12 @@
  * and Unix logic to parse_config_unix.
  */
 
-#include "config.h"
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+
+#include "config.h"
+#include "cli_logger.h"
 
 #ifdef _WIN32
 #include "win_parser.h"
@@ -134,7 +136,7 @@ static bool parse_config_windows(app_config_t *config, int argc, char *argv[])
         else if (arg[0] == '-')
         {
             // Unknown option
-            fprintf(stderr, "Invalid option: %s\n", arg);
+            print_error("Invalid option: %s\n", arg);
             return false;
         }
         else
@@ -159,7 +161,7 @@ static bool parse_config_windows(app_config_t *config, int argc, char *argv[])
     // Ensure ROM path is not empty
     if (config->rom_path[0] == '\0')
     {
-        fprintf(stderr, "Error: No ROM file specified.\n");
+        print_error("Error: No ROM file specified.\n");
         return false;
     }
 
@@ -256,7 +258,7 @@ static bool parse_config_unix(app_config_t *config, int argc, char *argv[])
 
     if (config->rom_path[0] == '\0')
     {
-        fprintf(stderr, "Error: No ROM file specified.\n");
+        print_error("Error: No ROM file specified.\n");
         return false;
     }
 

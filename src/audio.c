@@ -17,14 +17,14 @@ bool audio_init(const char *wav_path)
 {
     if (Mix_OpenAudio(44100, MIX_DEFAULT_FORMAT, 2, 2048) < 0)
     {
-        fprintf(stderr, "Mix_OpenAudio error: %s\n", Mix_GetError());
+        print_error("Mix_OpenAudio error: %s\n", Mix_GetError());
         return false;
     }
 
     gBeepChunk = Mix_LoadWAV(wav_path);
     if (!gBeepChunk)
     {
-        fprintf(stderr, "Failed to load %s: %s\n", wav_path, Mix_GetError());
+        print_error("Failed to load %s: %s\n", wav_path, Mix_GetError());
         return false;
     }
 
@@ -44,7 +44,7 @@ void audio_play_beep_loop(void)
     gBeepChannel = Mix_PlayChannel(-1, gBeepChunk, -1);
     if (gBeepChannel == -1)
     {
-        fprintf(stderr, "Mix_PlayChannel error: %s\n", Mix_GetError());
+        print_error("Mix_PlayChannel error: %s\n", Mix_GetError());
     }
 }
 

@@ -13,6 +13,7 @@
 #include <SDL2/SDL_mixer.h>
 
 #include "chip8.h"
+#include "cli_logger.h"
 #include "sdl_interface.h"
 #include "config.h"
 #include "audio.h"
@@ -27,7 +28,7 @@ void render_text(SDL_Renderer *renderer, TTF_Font *font, const char *text, int x
     SDL_Surface *surface = TTF_RenderText_Solid(font, text, color);
     if (!surface)
     {
-        fprintf(stderr, "Failed to render text: %s\n", TTF_GetError());
+        print_error("Failed to render text: %s\n", TTF_GetError());
         return;
     }
 
@@ -54,7 +55,7 @@ int main(int argc, char *argv[])
     //    If this fails, print usage and exit
     if (!parse_config(&app_cfg, argc, argv))
     {
-        fprintf(stderr, "Failed to parse configuration.\n");
+        print_error("Failed to parse configuration.\n");
         print_usage(argv[0], true);
         return EXIT_FAILURE;
     }
@@ -63,7 +64,7 @@ int main(int argc, char *argv[])
     chip8_t emu;
     if (!chip8_init(&emu))
     {
-        fprintf(stderr, "Error: Failed to init chip8.\n");
+        print_error("Error: Failed to init chip8.\n");
         return EXIT_FAILURE;
     }
 
@@ -73,7 +74,7 @@ int main(int argc, char *argv[])
     // 4) Load the ROM
     if (!chip8_load_program(&emu, app_cfg.rom_path))
     {
-        fprintf(stderr, "Failed to load ROM: %s\n", app_cfg.rom_path);
+        print_error("Failed to load ROM: %s\n", app_cfg.rom_path);
         return EXIT_FAILURE;
     }
 
@@ -81,14 +82,14 @@ int main(int argc, char *argv[])
     sdl_t sdl;
     if (!sdl_init(&sdl, &app_cfg.display_cfg))
     {
-        fprintf(stderr, "SDL initialization failed.\n");
+        print_error("SDL initialization failed.\n");
         return EXIT_FAILURE;
     }
 
     // 6) Initialize SDL_ttf for text rendering
     if (TTF_Init() == -1)
     {
-        fprintf(stderr, "SDL_ttf could not initialize! TTF_Error: %s\n", TTF_GetError());
+        print_error("SDL_ttf could not initialize! TTF_Error: %s\n", TTF_GetError());
         return EXIT_FAILURE;
     }
 
@@ -96,7 +97,7 @@ int main(int argc, char *argv[])
     TTF_Font *font = TTF_OpenFont("/usr/share/fonts/nerd-fonts/JetBrainsMonoNLNerdFont-Regular.ttf", 28);
     if (!font)
     {
-        fprintf(stderr, "Failed to load font: %s\n", TTF_GetError());
+        print_error("Failed to load font: %s\n", TTF_GetError());
         return EXIT_FAILURE;
     }
 
@@ -105,7 +106,7 @@ int main(int argc, char *argv[])
     {
         if (!audio_init(app_cfg.audio_cfg.wav_path))
         {
-            fprintf(stderr, "Audio initialization failed.\n");
+            print_error("Audio initialization failed.\n");
             return EXIT_FAILURE;
         }
         // Set global volume for SDL_mixer
