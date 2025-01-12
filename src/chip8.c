@@ -9,6 +9,7 @@
 #include <string.h>
 
 #include "chip8.h"
+#include "audio.h"
 
 bool chip8_init(chip8_t *emu)
 {
@@ -69,15 +70,26 @@ void chip8_cycle(chip8_t *emu)
 
 void chip8_timers_decrement(chip8_t *emu)
 {
+    // Decrement the delay timer
     if (emu->delay_timer > 0)
-    {
         emu->delay_timer--;
-    }
 
+    // Handle the sound timer
     if (emu->sound_timer > 0)
     {
+        // If we're not already playing the beep, start looping it now
+        if (!audio_is_beep_playing())
+        {
+            audio_play_beep_loop();
+        }
+
         emu->sound_timer--;
-        // Possibly beep if sound_timer hits 0
+
+        // If we just reached 0, stop the beep
+        if (emu->sound_timer == 0)
+        {
+            audio_stop_beep();
+        }
     }
 }
 

@@ -3,7 +3,7 @@
 ##############################################################################
 CC        = gcc
 CFLAGS    = -std=c17 -Wall -Wextra -Werror -Iinclude
-SDL_FLAGS = `sdl2-config --cflags --libs` -lSDL2_ttf
+SDL_FLAGS = `sdl2-config --cflags --libs` -lSDL2_ttf -lSDL2_mixer
 
 # Optional debug mode: make DEBUG=1
 ifdef DEBUG

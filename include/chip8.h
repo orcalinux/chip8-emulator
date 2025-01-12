@@ -82,8 +82,8 @@ typedef struct
     /* Largest array last: 4K memory */
     uint8_t memory[4096]; /**< 4096 bytes */
 
-    /* the config structure (280 bytes) */
-    config_t config; /**< Aligned to 8 bytes to avoid extra padding */
+    /* the display config structure (280 bytes) */
+    display_config_t config; /**< Aligned to 8 bytes to avoid extra padding */
 } chip8_t;
 
 #ifdef __cplusplus

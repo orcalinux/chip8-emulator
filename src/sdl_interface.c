@@ -61,7 +61,7 @@ static bool confirm_quit()
     }
 }
 
-bool sdl_init(sdl_t *sdl, const config_t *config)
+bool sdl_init(sdl_t *sdl, const display_config_t *config)
 {
     // Initialize SDL with everything enabled (audio, video, etc.)
     if (SDL_Init(SDL_INIT_EVERYTHING) < 0)

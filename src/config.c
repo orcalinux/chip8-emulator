@@ -1,24 +1,21 @@
 /**
  * @file config.c
- * @brief Implementation of the emulator configuration parser.
+ * @brief Unified config for display + audio + ROM path.
+ *
+ * This file delegates Windows logic to parse_config_windows
+ * and Unix logic to parse_config_unix.
  */
-
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <stdbool.h>
 
 #include "config.h"
+#include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
 
-/**
- * If we're on Windows, we'll do a custom parser.
- * Otherwise, use getopt_long for Unix-like systems.
- */
 #ifdef _WIN32
-#define USE_CUSTOM_PARSER
-static int optind = 1; // We'll reuse "optind" as a Windows custom parser index
+#include "win_parser.h"
 #else
-#include <getopt.h> // For getopt_long on Unix
+#include <getopt.h>
+#include <unistd.h>
 #endif
 
 void print_usage(const char *prog_name, bool to_stderr)
@@ -26,162 +23,243 @@ void print_usage(const char *prog_name, bool to_stderr)
     FILE *output = to_stderr ? stderr : stdout;
 
     fprintf(output,
-            "Usage: %s [options] <path_to_rom>\n"
-            "Options:\n"
-            "  -w, --width <width>        Window width\n"
-            "  -h, --height <height>      Window height\n"
-            "  -s, --scale <scale>        Scale factor\n"
-            "  -f, --fg <fg_color>        Foreground color (hex)\n"
-            "  -b, --bg <bg_color>        Background color (hex)\n"
-            "      --help                 Show this help message\n",
+            "Usage: %s [options] <path_to_rom>\n\n"
+            "Options (Display):\n"
+            "  -w, --width <width>        Window width (default: 640)\n"
+            "  -h, --height <height>      Window height (default: 320)\n"
+            "  -s, --scale <scale>        Scale factor (default: 10)\n"
+            "  -f, --fg <fg_color>        Foreground color (hex, default: 0xFFFFFFFF)\n"
+            "  -b, --bg <bg_color>        Background color (hex, default: 0x00000000)\n\n"
+            "Options (Audio):\n"
+            "  -A, --audio <on|off>       Enable or disable audio (default: on)\n"
+            "  -W, --wav <path>           Path to beep sound file (default: assets/beep.wav)\n"
+            "  -V, --vol <volume>         Set audio volume (0-128, default: 128)\n\n",
             prog_name);
 }
 
-/**
- * @brief Parses command-line arguments for emulator config:
- *        On Windows -> custom parser
- *        On Unix    -> getopt_long
- */
-bool sdl_parse_config_from_args(config_t *config, int argc, char *argv[])
+/* Forward declarations of OS-specific parse logic */
+#ifdef _WIN32
+static bool parse_config_windows(app_config_t *config, int argc, char *argv[]);
+#else
+static bool parse_config_unix(app_config_t *config, int argc, char *argv[]);
+#endif
+
+bool parse_config(app_config_t *config, int argc, char *argv[])
 {
-    // 1) Set defaults
-    config->window_width = 640;
-    config->window_height = 320;
-    config->fg_color = 0xFFFFFFFF;
-    config->bg_color = 0x00000000;
-    config->scale_factor = 10;
+    // Initialize default display
+    config->display_cfg.window_width = 640;
+    config->display_cfg.window_height = 320;
+    config->display_cfg.fg_color = 0xFFFFFFFF;
+    config->display_cfg.bg_color = 0x00000000;
+    config->display_cfg.scale_factor = 10;
+
+    // Initialize default audio
+    config->audio_cfg.enabled = true;
+    strncpy(config->audio_cfg.wav_path, "assets/beep.wav",
+            sizeof(config->audio_cfg.wav_path) - 1);
+    config->audio_cfg.wav_path[sizeof(config->audio_cfg.wav_path) - 1] = '\0';
+    config->audio_cfg.volume = 128;
+
+    // ROM path default
     config->rom_path[0] = '\0';
 
-#ifdef USE_CUSTOM_PARSER
-    // --------------------------------------------------
-    // Windows: Custom Parser
-    // --------------------------------------------------
-    for (int i = 1; i < argc; i++)
+#ifdef _WIN32
+    return parse_config_windows(config, argc, argv);
+#else
+    return parse_config_unix(config, argc, argv);
+#endif
+}
+
+#ifdef _WIN32
+/*-----------------------------------------------------------
+ *   WINDOWS-SPECIFIC PARSER
+ *----------------------------------------------------------*/
+static bool parse_config_windows(app_config_t *config, int argc, char *argv[])
+{
+    // Start from the first real argument
+    g_win_optind = 1;
+
+    while (g_win_optind < argc)
     {
-        if ((strcmp(argv[i], "-w") == 0 || strcmp(argv[i], "--width") == 0) && i + 1 < argc)
+        const char *arg = argv[g_win_optind];
+
+        // Display flags
+        if ((strcmp(arg, "-w") == 0 || strcmp(arg, "--width") == 0) && (g_win_optind + 1 < argc))
         {
-            config->window_width = atoi(argv[++i]);
+            config->display_cfg.window_width = atoi(argv[++g_win_optind]);
         }
-        else if ((strcmp(argv[i], "-h") == 0 || strcmp(argv[i], "--height") == 0) && i + 1 < argc)
+        else if ((strcmp(arg, "-h") == 0 || strcmp(arg, "--height") == 0) && (g_win_optind + 1 < argc))
         {
-            config->window_height = atoi(argv[++i]);
+            config->display_cfg.window_height = atoi(argv[++g_win_optind]);
         }
-        else if ((strcmp(argv[i], "-s") == 0 || strcmp(argv[i], "--scale") == 0) && i + 1 < argc)
+        else if ((strcmp(arg, "-s") == 0 || strcmp(arg, "--scale") == 0) && (g_win_optind + 1 < argc))
         {
-            config->scale_factor = atoi(argv[++i]);
-            config->window_width = 64 * config->scale_factor;
-            config->window_height = 32 * config->scale_factor;
+            config->display_cfg.scale_factor = atoi(argv[++g_win_optind]);
+            config->display_cfg.window_width = 64 * config->display_cfg.scale_factor;
+            config->display_cfg.window_height = 32 * config->display_cfg.scale_factor;
         }
-        else if ((strcmp(argv[i], "-f") == 0 || strcmp(argv[i], "--fg") == 0) && i + 1 < argc)
+        else if ((strcmp(arg, "-f") == 0 || strcmp(arg, "--fg") == 0) && (g_win_optind + 1 < argc))
         {
-            config->fg_color = strtoul(argv[++i], NULL, 16);
+            config->display_cfg.fg_color = strtoul(argv[++g_win_optind], NULL, 16);
         }
-        else if ((strcmp(argv[i], "-b") == 0 || strcmp(argv[i], "--bg") == 0) && i + 1 < argc)
+        else if ((strcmp(arg, "-b") == 0 || strcmp(arg, "--bg") == 0) && (g_win_optind + 1 < argc))
         {
-            config->bg_color = strtoul(argv[++i], NULL, 16);
+            config->display_cfg.bg_color = strtoul(argv[++g_win_optind], NULL, 16);
         }
-        else if (strcmp(argv[i], "--help") == 0)
+        // Audio flags
+        else if ((strcmp(arg, "-A") == 0 || strcmp(arg, "--audio") == 0) && (g_win_optind + 1 < argc))
         {
-            // Show usage & exit
-            print_usage(argv[0], false);
-            exit(EXIT_SUCCESS);
+            const char *val = argv[++g_win_optind];
+            if (strcmp(val, "off") == 0 || strcmp(val, "0") == 0)
+                config->audio_cfg.enabled = false;
+            else
+                config->audio_cfg.enabled = true;
         }
-        else if (argv[i][0] != '-')
+        else if ((strcmp(arg, "-W") == 0 || strcmp(arg, "--wav") == 0) && (g_win_optind + 1 < argc))
         {
-            // Assume this is the ROM path
-            strncpy(config->rom_path, argv[i], sizeof(config->rom_path) - 1);
-            config->rom_path[sizeof(config->rom_path) - 1] = '\0';
-            // Mark we found the ROM, so next time we come here, we skip
-            optind = i + 1;
-            break;
+            strncpy(config->audio_cfg.wav_path, argv[++g_win_optind],
+                    sizeof(config->audio_cfg.wav_path) - 1);
+            config->audio_cfg.wav_path[sizeof(config->audio_cfg.wav_path) - 1] = '\0';
+        }
+        else if ((strcmp(arg, "-V") == 0 || strcmp(arg, "--vol") == 0) && (g_win_optind + 1 < argc))
+        {
+            int vol = atoi(argv[++g_win_optind]);
+            if (vol < 0)
+                vol = 0;
+            if (vol > 128)
+                vol = 128;
+            config->audio_cfg.volume = vol;
+        }
+        // Unknown or leftover
+        else if (arg[0] == '-')
+        {
+            // Unknown option
+            fprintf(stderr, "Invalid option: %s\n", arg);
+            return false;
         }
         else
         {
-            fprintf(stderr, "Unknown option: %s\n", argv[i]);
-            print_usage(argv[0], true);
-            return false;
-        }
-    }
-#else
-    // --------------------------------------------------
-    // Unix: getopt_long
-    // --------------------------------------------------
-    static struct option long_options[] = {
-        {"width", required_argument, NULL, 'w'},
-        {"height", required_argument, NULL, 'h'},
-        {"scale", required_argument, NULL, 's'},
-        {"fg", required_argument, NULL, 'f'},
-        {"bg", required_argument, NULL, 'b'},
-        {"help", no_argument, NULL, 0},
-        {NULL, 0, NULL, 0}};
-
-    int opt;
-    int option_index = 0;
-
-    while ((opt = getopt_long(argc, argv, "w:h:s:f:b:", long_options, &option_index)) != -1)
-    {
-        switch (opt)
-        {
-        case 'w':
-            config->window_width = atoi(optarg);
-            break;
-        case 'h':
-            config->window_height = atoi(optarg);
-            break;
-        case 's':
-            config->scale_factor = atoi(optarg);
-            config->window_width = 64 * config->scale_factor;
-            config->window_height = 32 * config->scale_factor;
-            break;
-        case 'f':
-            config->fg_color = strtoul(optarg, NULL, 16);
-            break;
-        case 'b':
-            config->bg_color = strtoul(optarg, NULL, 16);
-            break;
-        case 0: // long option with no short equivalent
-            if (strcmp(long_options[option_index].name, "help") == 0)
-            {
-                print_usage(argv[0], false);
-                exit(EXIT_SUCCESS);
-            }
-            break;
-        default:
-            print_usage(argv[0], true);
-            return false;
-        }
-    }
-#endif // USE_CUSTOM_PARSER
-
-    // 2) Check if a ROM file is provided
-    //    On Unix, 'optind' from getopt
-    //    On Windows, we've stored it in 'optind' manually
-
-    // If we didn't fill config->rom_path in Windows parser,
-    // or if 'optind' points beyond the argument list on Unix:
-#ifdef USE_CUSTOM_PARSER
-    int local_optind = optind; // custom "optind"
-#else
-    int local_optind = optind; // real getopt optind
-#endif
-
-    if (config->rom_path[0] == '\0') // Windows case: no ROM found in loop
-    {
-        // Check if there's still an argument left
-        if (local_optind < argc)
-        {
-            strncpy(config->rom_path, argv[local_optind], sizeof(config->rom_path) - 1);
+            // We assume it's the ROM path
+            strncpy(config->rom_path, arg, sizeof(config->rom_path) - 1);
             config->rom_path[sizeof(config->rom_path) - 1] = '\0';
+            g_win_optind++;
+            break; // Stop parsing once we get the ROM
         }
+
+        g_win_optind++;
     }
 
-    // Now if we STILL have no ROM, error out
+    // If we STILL have no ROM path but there’s leftover
+    if (config->rom_path[0] == '\0' && g_win_optind < argc)
+    {
+        strncpy(config->rom_path, argv[g_win_optind], sizeof(config->rom_path) - 1);
+        config->rom_path[sizeof(config->rom_path) - 1] = '\0';
+    }
+
+    // Ensure ROM path is not empty
     if (config->rom_path[0] == '\0')
     {
         fprintf(stderr, "Error: No ROM file specified.\n");
-        print_usage(argv[0], true);
         return false;
     }
 
     return true;
 }
+#else
+/*-----------------------------------------------------------
+ *   UNIX-SPECIFIC PARSER (getopt_long)
+ *----------------------------------------------------------*/
+static bool parse_config_unix(app_config_t *config, int argc, char *argv[])
+{
+    static struct option long_opts[] = {
+        // Display
+        {"width", required_argument, NULL, 'w'},
+        {"height", required_argument, NULL, 'h'},
+        {"scale", required_argument, NULL, 's'},
+        {"fg", required_argument, NULL, 'f'},
+        {"bg", required_argument, NULL, 'b'},
+
+        // Audio
+        {"audio", required_argument, NULL, 'A'},
+        {"wav", required_argument, NULL, 'W'},
+        {"vol", required_argument, NULL, 'V'},
+        {NULL, 0, NULL, 0}};
+
+    // Reset or ensure fresh parse
+    extern int optind;
+    optind = 1; // start from the first real arg
+
+    int opt;
+    int option_index = 0;
+
+    while ((opt = getopt_long(argc, argv, "w:h:s:f:b:A:W:V:", long_opts, &option_index)) != -1)
+    {
+        switch (opt)
+        {
+        // Display
+        case 'w':
+            config->display_cfg.window_width = atoi(optarg);
+            break;
+        case 'h':
+            config->display_cfg.window_height = atoi(optarg);
+            break;
+        case 's':
+            config->display_cfg.scale_factor = atoi(optarg);
+            config->display_cfg.window_width = 64 * config->display_cfg.scale_factor;
+            config->display_cfg.window_height = 32 * config->display_cfg.scale_factor;
+            break;
+        case 'f':
+            config->display_cfg.fg_color = strtoul(optarg, NULL, 16);
+            break;
+        case 'b':
+            config->display_cfg.bg_color = strtoul(optarg, NULL, 16);
+            break;
+
+        // Audio
+        case 'A':
+        {
+            if (strcmp(optarg, "off") == 0 || strcmp(optarg, "0") == 0)
+                config->audio_cfg.enabled = false;
+            else
+                config->audio_cfg.enabled = true;
+            break;
+        }
+        case 'W':
+        {
+            strncpy(config->audio_cfg.wav_path, optarg,
+                    sizeof(config->audio_cfg.wav_path) - 1);
+            config->audio_cfg.wav_path[sizeof(config->audio_cfg.wav_path) - 1] = '\0';
+            break;
+        }
+        case 'V':
+        {
+            int vol = atoi(optarg);
+            if (vol < 0)
+                vol = 0;
+            if (vol > 128)
+                vol = 128;
+            config->audio_cfg.volume = vol;
+            break;
+        }
+        default:
+            return false;
+        }
+    }
+
+    // leftover argument for ROM
+    if (optind < argc)
+    {
+        strncpy(config->rom_path, argv[optind], sizeof(config->rom_path) - 1);
+        config->rom_path[sizeof(config->rom_path) - 1] = '\0';
+        optind++;
+    }
+
+    if (config->rom_path[0] == '\0')
+    {
+        fprintf(stderr, "Error: No ROM file specified.\n");
+        return false;
+    }
+
+    return true;
+}
+#endif
