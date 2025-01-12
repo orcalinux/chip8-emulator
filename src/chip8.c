@@ -12,6 +12,26 @@
 #include "chip8.h"
 #include "audio.h"
 
+/**
+ * @brief Decodes the raw 16-bit opcode into a chip8_instr_t struct.
+ *
+ * @param opcode The raw 16-bit opcode fetched from memory.
+ * @return A fully populated chip8_instr_t.
+ */
+static chip8_instr_t decode_opcode(uint16_t opcode)
+{
+    chip8_instr_t instr;
+    instr.opcode = opcode;
+
+    instr.nnn = opcode & 0x0FFF;    // Lower 12 bits
+    instr.kk = opcode & 0x00FF;     // Lower 8 bits
+    instr.x = (opcode >> 8) & 0x0F; // Bits 8..11
+    instr.y = (opcode >> 4) & 0x0F; // Bits 4..7
+    instr.n = opcode & 0x000F;      // Lowest nibble (bits 0..3)
+
+    return instr;
+}
+
 bool chip8_init(chip8_t *emu)
 {
     // Clear the entire emulator struct
@@ -82,14 +102,36 @@ bool chip8_load_program(chip8_t *emu, const char *filepath)
 
 void chip8_cycle(chip8_t *emu)
 {
-    // Fetch opcode
-    // uint16_t opcode = (emu->memory[emu->pc] << 8) | emu->memory[emu->pc + 1];
+    // 1. Fetch the raw 16-bit opcode
+    uint16_t raw_opcode = (emu->memory[emu->pc] << 8) | emu->memory[emu->pc + 1];
 
-    // Decode and execute opcode
-    // For example, handle each nibble:
-    // ...
-    // increment program counter
-    emu->pc += 2;
+    // 2. Decode the opcode into a chip8_instr_t
+    chip8_instr_t instr = decode_opcode(raw_opcode);
+
+    // 3. Execute the opcode.
+    //    Typically, you check the highest nibble (instr.opcode & 0xF000),
+    //    or you can structure your switch based on the high nibble and sub-nibbles.
+    switch (instr.opcode & 0xF000)
+    {
+    case 0x1000: // JP addr (jump to nnn)
+        emu->pc = instr.nnn;
+        return; // Important: we don't increment pc here if we're jumping
+
+    case 0x6000: // LD Vx, byte (Set Vx = kk)
+        emu->V[instr.x] = instr.kk;
+        emu->pc += 2;
+        break;
+
+    case 0x7000: // ADD Vx, byte (Set Vx = Vx + kk)
+        emu->V[instr.x] += instr.kk;
+        emu->pc += 2;
+        break;
+
+    default:
+        print_warning("Unknown opcode: 0x%04X at PC=0x%03X\n", instr.opcode, emu->pc);
+        emu->pc += 2; // skip unknown opcode
+        break;
+    }
 }
 
 void chip8_timers_decrement(chip8_t *emu)

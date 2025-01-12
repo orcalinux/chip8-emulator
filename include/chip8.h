@@ -56,6 +56,22 @@ typedef enum
 } chip8_state_t;
 
 /**
+ * @struct chip8_instr_t
+ * @brief Represents a decoded CHIP-8 instruction (opcode).
+ *
+ * This struct helps break down a raw 16-bit instruction into its components.
+ */
+typedef struct
+{
+    uint16_t opcode; /**< The raw 16-bit opcode */
+    uint16_t nnn;    /**< The lower 12 bits of the opcode, often used for memory addresses */
+    uint8_t kk;      /**< The lower 8 bits, often used as an immediate value */
+    uint8_t x;       /**< Lower 4 bits of the high byte (2nd nibble) */
+    uint8_t y;       /**< Upper 4 bits of the low byte (3rd nibble) */
+    uint8_t n;       /**< The lowest 4 bits (4th nibble) */
+} chip8_instr_t;
+
+/**
  * @struct chip8_t
  * @brief Holds the state of the CHIP-8 emulator.
  */
@@ -113,9 +129,12 @@ extern "C"
     bool chip8_load_program(chip8_t *emu, const char *filepath);
 
     /**
-     * @brief Executes one cycle (one or more opcodes) of the CHIP-8 CPU.
+     * @brief Executes one CPU cycle of the CHIP-8 CPU.
      *
-     * @param emu Pointer to the chip8_t struct.
+     * Fetches an opcode from memory, decodes it, and executes it,
+     * then advances the program counter.
+     *
+     * @param emu Pointer to the chip8_t struct representing the emulator state.
      */
     void chip8_cycle(chip8_t *emu);
 
