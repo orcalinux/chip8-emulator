@@ -479,14 +479,6 @@ bool chip8_load_program(chip8_t *emu, const char *filepath)
     return true;
 }
 
-/**
- * @brief Executes one CPU cycle of the CHIP-8 CPU.
- *
- * 1) Fetch the raw 16-bit opcode from memory.
- * 2) Decode it into a chip8_instr_t.
- * 3) Determine the opcode's high nibble and dispatch to the handler table.
- * 4) If no handler is found, warn and skip the instruction.
- */
 void chip8_cycle(chip8_t *emu)
 {
     // Fetch
