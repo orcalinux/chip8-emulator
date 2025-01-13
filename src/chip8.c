@@ -279,9 +279,11 @@ static void handle_rnd_vx_kk(chip8_t *emu, chip8_instr_t instr)
  */
 static void handle_drw_vx_vy_n(chip8_t *emu, chip8_instr_t instr)
 {
-    uint8_t x = emu->V[instr.x] % emu->config.window_width;  // Wrap around display edges
-    uint8_t y = emu->V[instr.y] % emu->config.window_height; // Wrap around display edges
+    uint8_t x = emu->V[instr.x] % 64; // Fixed screen width for CHIP-8
+    uint8_t y = emu->V[instr.y] % 32; // Fixed screen height for CHIP-8
     uint8_t height = instr.n;
+
+    print_debug("Drawing sprite at (%d, %d) with height %d, I=0x%03X", x, y, height, emu->I);
 
     emu->V[0xF] = 0; // Reset collision flag
 
@@ -295,6 +297,7 @@ static void handle_drw_vx_vy_n(chip8_t *emu, chip8_instr_t instr)
         }
 
         uint8_t sprite_byte = emu->memory[emu->I + row];
+        print_debug("Sprite row %d: 0x%02X", row, sprite_byte);
 
         for (uint8_t col = 0; col < 8; col++)
         {
@@ -302,24 +305,25 @@ static void handle_drw_vx_vy_n(chip8_t *emu, chip8_instr_t instr)
             uint16_t dst_x = x + col;
             uint16_t dst_y = y + row;
 
-            // Check display boundaries
-            if (dst_x < 64 && dst_y < 32)
+            if (dst_x >= 64 || dst_y >= 32)
             {
-                uint16_t screen_idx = dst_y * 64 + dst_x;
-                bool *screen_pixel = &emu->display[screen_idx];
-
-                // Collision detection
-                if (*screen_pixel && pixel)
-                    emu->V[0xF] = 1;
-
-                // XOR the pixel
-                *screen_pixel ^= (pixel != 0);
+                print_debug("Skipping pixel out of bounds at (%d, %d)", dst_x, dst_y);
+                continue;
             }
-            else
-            {
-                // Optionally handle pixels that go beyond screen boundaries
-                // For now, we simply skip them
-            }
+
+            uint16_t screen_idx = dst_y * 64 + dst_x;
+            uint8_t *screen_pixel = &emu->display[screen_idx];
+
+            // Debug: Print pixel status before XOR
+            print_debug("Pixel before: %d, Sprite pixel: %d at (%d, %d)", *screen_pixel, pixel, dst_x, dst_y);
+
+            if (*screen_pixel && pixel)
+                emu->V[0xF] = 1;
+
+            *screen_pixel ^= pixel;
+
+            // Debug: Print pixel status after XOR
+            print_debug("Pixel after: %d at (%d, %d)", *screen_pixel, dst_x, dst_y);
         }
     }
 

@@ -97,7 +97,7 @@ typedef struct
     bool keys[16]; /**< Input keys 0x0..0xF (16 bytes if bool is 1 byte) */
 
     /* Large bool array (display) */
-    bool display[64 * 32]; /**< 2048 bytes if bool is 1 byte */
+    uint8_t display[64 * 32]; /**< 2048 bytes */
 
     /* Largest array last: 4K memory */
     uint8_t memory[4096]; /**< 4096 bytes */

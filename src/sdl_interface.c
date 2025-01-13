@@ -5,8 +5,9 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <getopt.h>
-
+#include <string.h>
+#include <stdbool.h>
+#include <SDL2/SDL.h>
 #include "sdl_interface.h"
 #include "cli_logger.h"
 
@@ -82,6 +83,7 @@ bool sdl_init(sdl_t *sdl, const display_config_t *config)
     if (!sdl->window)
     {
         SDL_Log("Window could not be created! SDL_Error: %s\n", SDL_GetError());
+        SDL_Quit();
         return false;
     }
 
@@ -90,6 +92,8 @@ bool sdl_init(sdl_t *sdl, const display_config_t *config)
     if (!sdl->renderer)
     {
         SDL_Log("Renderer could not be created! SDL_Error: %s\n", SDL_GetError());
+        SDL_DestroyWindow(sdl->window);
+        SDL_Quit();
         return false;
     }
 
@@ -97,10 +101,13 @@ bool sdl_init(sdl_t *sdl, const display_config_t *config)
     sdl->texture = SDL_CreateTexture(sdl->renderer,
                                      SDL_PIXELFORMAT_ARGB8888,
                                      SDL_TEXTUREACCESS_STREAMING,
-                                     config->window_width, config->window_height);
+                                     64, 32); // CHIP-8 resolution
     if (!sdl->texture)
     {
         SDL_Log("Texture could not be created! SDL_Error: %s\n", SDL_GetError());
+        SDL_DestroyRenderer(sdl->renderer);
+        SDL_DestroyWindow(sdl->window);
+        SDL_Quit();
         return false;
     }
 
@@ -122,17 +129,31 @@ void sdl_render(const sdl_t *sdl, const chip8_t *emu)
     uint32_t pixels[64 * 32];
     for (int i = 0; i < 64 * 32; i++)
     {
-        // If display[i] is true, pixel is white; otherwise black
-        bool pixel_on = emu->display[i];
-        pixels[i] = pixel_on ? 0xFFFFFFFF : 0xFF000000;
+        // If display[i] is non-zero, pixel is fg_color; otherwise bg_color
+        uint8_t pixel_on = emu->display[i];
+        pixels[i] = pixel_on ? emu->config.fg_color : emu->config.bg_color;
     }
 
     // Update the texture with our pixel buffer
-    SDL_UpdateTexture(sdl->texture, NULL, pixels, 64 * sizeof(uint32_t));
+    if (SDL_UpdateTexture(sdl->texture, NULL, pixels, 64 * sizeof(uint32_t)) != 0)
+    {
+        SDL_Log("SDL_UpdateTexture failed: %s\n", SDL_GetError());
+        return;
+    }
 
     // Render
-    SDL_RenderClear(sdl->renderer);
-    SDL_RenderCopy(sdl->renderer, sdl->texture, NULL, NULL);
+    if (SDL_RenderClear(sdl->renderer) != 0)
+    {
+        SDL_Log("SDL_RenderClear failed: %s\n", SDL_GetError());
+        return;
+    }
+
+    if (SDL_RenderCopy(sdl->renderer, sdl->texture, NULL, NULL) != 0)
+    {
+        SDL_Log("SDL_RenderCopy failed: %s\n", SDL_GetError());
+        return;
+    }
+
     SDL_RenderPresent(sdl->renderer);
 }
 
@@ -144,7 +165,6 @@ void sdl_handle_event(chip8_t *emu, const SDL_Event *event)
         emu->state = CHIP8_STOPPED;
         break;
 
-    // Handle keys pressed (KEYDOWN)
     case SDL_KEYDOWN:
         switch (event->key.keysym.sym)
         {
@@ -220,72 +240,80 @@ void sdl_handle_event(chip8_t *emu, const SDL_Event *event)
             }
             break;
 
-        // Handle keys released (KEYUP)
-        case SDL_KEYUP:
-            switch (event->key.keysym.sym)
-            {
-            case SDLK_1:
-                emu->keys[0x1] = false;
-                break;
-            case SDLK_2:
-                emu->keys[0x2] = false;
-                break;
-            case SDLK_3:
-                emu->keys[0x3] = false;
-                break;
-            case SDLK_4:
-                emu->keys[0xC] = false;
-                break;
-            case SDLK_q:
-                emu->keys[0x4] = false;
-                break;
-            case SDLK_w:
-                emu->keys[0x5] = false;
-                break;
-            case SDLK_e:
-                emu->keys[0x6] = false;
-                break;
-            case SDLK_r:
-                emu->keys[0xD] = false;
-                break;
-            case SDLK_a:
-                emu->keys[0x7] = false;
-                break;
-            case SDLK_s:
-                emu->keys[0x8] = false;
-                break;
-            case SDLK_d:
-                emu->keys[0x9] = false;
-                break;
-            case SDLK_f:
-                emu->keys[0xE] = false;
-                break;
-            case SDLK_z:
-                emu->keys[0xA] = false;
-                break;
-            case SDLK_x:
-                emu->keys[0x0] = false;
-                break;
-            case SDLK_c:
-                emu->keys[0xB] = false;
-                break;
-            case SDLK_v:
-                emu->keys[0xF] = false;
-                break;
-            }
-            break;
-
         default:
-            // Handle other events (mouse movement, etc.)
+            // Handle other keys if necessary
             break;
         }
+        break;
+
+    case SDL_KEYUP:
+        switch (event->key.keysym.sym)
+        {
+        case SDLK_1:
+            emu->keys[0x1] = false;
+            break;
+        case SDLK_2:
+            emu->keys[0x2] = false;
+            break;
+        case SDLK_3:
+            emu->keys[0x3] = false;
+            break;
+        case SDLK_4:
+            emu->keys[0xC] = false;
+            break;
+        case SDLK_q:
+            emu->keys[0x4] = false;
+            break;
+        case SDLK_w:
+            emu->keys[0x5] = false;
+            break;
+        case SDLK_e:
+            emu->keys[0x6] = false;
+            break;
+        case SDLK_r:
+            emu->keys[0xD] = false;
+            break;
+        case SDLK_a:
+            emu->keys[0x7] = false;
+            break;
+        case SDLK_s:
+            emu->keys[0x8] = false;
+            break;
+        case SDLK_d:
+            emu->keys[0x9] = false;
+            break;
+        case SDLK_f:
+            emu->keys[0xE] = false;
+            break;
+        case SDLK_z:
+            emu->keys[0xA] = false;
+            break;
+        case SDLK_x:
+            emu->keys[0x0] = false;
+            break;
+        case SDLK_c:
+            emu->keys[0xB] = false;
+            break;
+        case SDLK_v:
+            emu->keys[0xF] = false;
+            break;
+        default:
+            // Handle other keys if necessary
+            break;
+        }
+        break;
+
+    default:
+        // Handle other events (mouse movement, etc.) if necessary
+        break;
     }
 }
 
-void sdl_update_screen(const sdl_t *sdl, const chip8_t *emu, bool *previous_frame)
+void sdl_update_screen(const sdl_t *sdl, const chip8_t *emu, uint8_t *previous_frame)
 {
     bool changed = false;
 
+    // Check if the display has changed since the last frame
     for (int i = 0; i < 64 * 32; i++)
     {
         if (emu->display[i] != previous_frame[i])
@@ -309,12 +337,38 @@ void sdl_update_screen(const sdl_t *sdl, const chip8_t *emu, bool *previous_fram
         pixels[i] = emu->display[i] ? emu->config.fg_color : emu->config.bg_color;
     }
 
-    SDL_UpdateTexture(sdl->texture, NULL, pixels, 64 * sizeof(uint32_t));
-    SDL_RenderClear(sdl->renderer);
-    SDL_RenderCopy(sdl->renderer, sdl->texture, NULL, NULL);
+    // Update the texture with the new pixel data
+    if (SDL_UpdateTexture(sdl->texture, NULL, pixels, 64 * sizeof(uint32_t)) != 0)
+    {
+        SDL_Log("SDL_UpdateTexture failed: %s\n", SDL_GetError());
+        return;
+    }
+
+    // Clear the renderer
+    if (SDL_RenderClear(sdl->renderer) != 0)
+    {
+        SDL_Log("SDL_RenderClear failed: %s\n", SDL_GetError());
+        return;
+    }
+
+    // Copy the texture to the renderer
+    if (SDL_RenderCopy(sdl->renderer, sdl->texture, NULL, NULL) != 0)
+    {
+        SDL_Log("SDL_RenderCopy failed: %s\n", SDL_GetError());
+        return;
+    }
+
+    // Present the updated renderer
     SDL_RenderPresent(sdl->renderer);
 }
 
+/**
+ * @brief Cleans up and releases all SDL resources.
+ *
+ * This function destroys the texture, renderer, and window, and quits SDL.
+ *
+ * @param sdl Pointer to the SDL interface structure to clean up.
+ */
 void sdl_cleanup(sdl_t *sdl)
 {
     if (sdl->texture)

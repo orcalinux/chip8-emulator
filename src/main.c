@@ -115,7 +115,8 @@ int main(int argc, char *argv[])
 
     // 8) Main loop
     bool running = true;
-    bool previous_frame[64 * 32] = {false};
+    uint8_t previous_frame[64 * 32];
+    memset(previous_frame, 0, sizeof(previous_frame));
 
     while (running)
     {

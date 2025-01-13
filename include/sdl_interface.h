@@ -31,39 +31,51 @@ extern "C"
 #endif
 
     /**
-     * @brief Initializes SDL, creates a window, renderer, and texture.
+     * @brief Initializes the SDL interface for the CHIP-8 emulator.
      *
-     * @param sdl Pointer to sdl_t struct to be filled.
-     * @param window_width The desired window width.
-     * @param window_height The desired window height.
-     * @return true on success, false on error.
+     * This function initializes SDL, creates a window, renderer, and texture,
+     * and sets the initial render color based on the background color.
+     *
+     * @param sdl Pointer to the SDL interface structure to initialize.
+     * @param config Pointer to the display configuration structure.
+     * @return true if initialization is successful, false otherwise.
      */
     bool sdl_init(sdl_t *sdl, const display_config_t *config);
 
     /**
-     * @brief Renders the CHIP-8 display onto the SDL window.
+     * @brief Renders the CHIP-8 display to the SDL window.
      *
-     * @param sdl Pointer to sdl_t struct.
-     * @param emu Pointer to chip8_t struct containing the display state.
+     * This function converts the CHIP-8's display buffer into ARGB8888 pixel data,
+     * updates the SDL texture, and presents the rendered frame.
+     *
+     * @param sdl Pointer to the SDL interface structure.
+     * @param emu Pointer to the CHIP-8 emulator structure.
      */
     void sdl_render(const sdl_t *sdl, const chip8_t *emu);
 
     /**
-     * @brief Updates the CHIP-8 key states from SDL events.
+     * @brief Handles SDL events and updates the CHIP-8 emulator state accordingly.
      *
-     * @param emu Pointer to chip8_t struct (to update keys).
-     * @param event SDL_Event to process.
+     * This function processes SDL events such as quitting the application, key presses,
+     * and key releases, updating the emulator's state and key buffer as necessary.
+     *
+     * @param emu Pointer to the CHIP-8 emulator structure.
+     * @param event Pointer to the SDL event structure.
      */
     void sdl_handle_event(chip8_t *emu, const SDL_Event *event);
 
     /**
-     * @brief Update only if there's a change in the display array.
+     * @brief Updates the SDL texture and renders the display if changes are detected.
      *
-     * @param sdl Pointer to sdl_t struct.
-     * @param emu Pointer to chip8_t struct containing display state.
-     * @param previous_frame A 64*32 bool array tracking previous state.
+     * This function compares the current display buffer with the previous frame to
+     * determine if rendering is necessary. If changes are detected, it updates the
+     * texture and presents the new frame.
+     *
+     * @param sdl Pointer to the SDL interface structure.
+     * @param emu Pointer to the CHIP-8 emulator structure.
+     * @param previous_frame Pointer to the buffer holding the previous frame's state.
      */
-    void sdl_update_screen(const sdl_t *sdl, const chip8_t *emu, bool *previous_frame);
+    void sdl_update_screen(const sdl_t *sdl, const chip8_t *emu, uint8_t *previous_frame);
 
     /**
      * @brief Cleans up and destroys SDL window, renderer, and texture.
