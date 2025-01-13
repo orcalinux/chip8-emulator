@@ -85,5 +85,5 @@ clean:
 	@echo "[CLEAN] Removed object files and binary."
 
 clean-all: clean
-	@rm -f $(OBJ_DIR)/*.d
-	@echo "[CLEAN-ALL] Removed dependency files."
+	@rm -f $(OBJ_DIR)/*.o $(BIN_DIR)/$(TARGET) $(OBJ_DIR)/*.d
+	@echo "[CLEAN-ALL] Removed object, binary and dependency files."
