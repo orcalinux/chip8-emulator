@@ -100,9 +100,12 @@ typedef struct
     bool display[64 * 32]; /**< 2048 bytes if bool is 1 byte */
 
     /* Largest array last: 4K memory */
-    uint8_t memory[4096]; /**< 4096 bytes */
+    uint8_t memory[CHIP8_MEMORY_SIZE]; /**< 4096 bytes */
 
-    /* the display config structure (280 bytes) */
+    /* Decoded instruction */
+    chip8_instr_t current_instr; /**< Holds the currently decoded instruction */
+
+    /* The display config structure */
     display_config_t config; /**< Aligned to 8 bytes to avoid extra padding */
 } chip8_t;
 
@@ -127,6 +130,17 @@ extern "C"
      * @return true on success, false on error.
      */
     bool chip8_load_program(chip8_t *emu, const char *filepath);
+
+    /**
+     * @brief Logs the current instruction for debugging purposes.
+     *
+     * This function prints the current state of the emulator's instruction
+     * including the program counter (PC), opcode, and various components
+     * of the instruction (x, y, kk, nnn, n).
+     *
+     * @param emu Pointer to the chip8_t structure representing the emulator state.
+     */
+    void debug_log_instruction(const chip8_t *emu);
 
     /**
      * @brief Executes one CPU cycle of the CHIP-8 CPU.

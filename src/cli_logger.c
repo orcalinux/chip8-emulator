@@ -34,6 +34,18 @@ void print_warning(const char *format, ...)
     va_end(args);
 }
 
+void print_debug(const char *format, ...)
+{
+    va_list args;
+    va_start(args, format);
+
+    printf(COLOR_DEBUG "[DEBUG] " RESET_COLOR);
+    vprintf(format, args);
+    printf("\n");
+
+    va_end(args);
+}
+
 void print_error(const char *format, ...)
 {
     va_list args;

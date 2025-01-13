@@ -18,7 +18,7 @@
 #include "config.h"
 #include "audio.h"
 #ifdef _WIN32
-#include "win_parser.h" // If you're using a custom Windows parser index
+#include "win_parser.h"
 #endif
 
 // Simple text rendering helper
