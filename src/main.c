@@ -9,7 +9,6 @@
 #include <stdlib.h>
 #include <stdbool.h>
 #include <SDL2/SDL.h>
-#include <SDL2/SDL_ttf.h>
 #include <SDL2/SDL_mixer.h>
 
 #include "chip8.h"
@@ -20,25 +19,6 @@
 #ifdef _WIN32
 #include "win_parser.h"
 #endif
-
-// Simple text rendering helper
-void render_text(SDL_Renderer *renderer, TTF_Font *font, const char *text, int x, int y)
-{
-    SDL_Color color = {255, 255, 255, 255}; // White
-    SDL_Surface *surface = TTF_RenderText_Solid(font, text, color);
-    if (!surface)
-    {
-        print_error("Failed to render text: %s\n", TTF_GetError());
-        return;
-    }
-
-    SDL_Texture *texture = SDL_CreateTextureFromSurface(renderer, surface);
-    SDL_Rect dst = {x, y, surface->w, surface->h};
-    SDL_RenderCopy(renderer, texture, NULL, &dst);
-
-    SDL_FreeSurface(surface);
-    SDL_DestroyTexture(texture);
-}
 
 int main(int argc, char *argv[])
 {
@@ -64,7 +44,7 @@ int main(int argc, char *argv[])
     chip8_t emu;
     if (!chip8_init(&emu))
     {
-        print_error("Error: Failed to init chip8.\n");
+        print_error("Error: Failed to initialize CHIP-8 emulator.\n");
         return EXIT_FAILURE;
     }
 
@@ -86,34 +66,20 @@ int main(int argc, char *argv[])
         return EXIT_FAILURE;
     }
 
-    // 6) Initialize SDL_ttf for text rendering
-    if (TTF_Init() == -1)
-    {
-        print_error("SDL_ttf could not initialize! TTF_Error: %s\n", TTF_GetError());
-        return EXIT_FAILURE;
-    }
-
-    // Load a font
-    TTF_Font *font = TTF_OpenFont("/usr/share/fonts/nerd-fonts/JetBrainsMonoNLNerdFont-Regular.ttf", 28);
-    if (!font)
-    {
-        print_error("Failed to load font: %s\n", TTF_GetError());
-        return EXIT_FAILURE;
-    }
-
-    // 7) Initialize audio (if enabled)
+    // 6) Initialize audio (if enabled)
     if (app_cfg.audio_cfg.enabled)
     {
         if (!audio_init(app_cfg.audio_cfg.wav_path))
         {
             print_error("Audio initialization failed.\n");
+            sdl_cleanup(&sdl);
             return EXIT_FAILURE;
         }
         // Set global volume for SDL_mixer
         Mix_Volume(-1, app_cfg.audio_cfg.volume);
     }
 
-    // 8) Main loop
+    // 7) Main loop
     bool running = true;
     uint8_t previous_frame[64 * 32];
     memset(previous_frame, 0, sizeof(previous_frame));
@@ -132,9 +98,9 @@ int main(int argc, char *argv[])
                 running = false;
             }
 
-            // If the emulator is paused, wait for a key press
+            // If the emulator is paused, skip emulation cycle
             if (emu.state == CHIP8_PAUSED)
-                continue;
+                break;
         }
 
         // If still running, do one CPU cycle
@@ -145,13 +111,11 @@ int main(int argc, char *argv[])
             sdl_update_screen(&sdl, &emu, previous_frame); // Render if needed
         }
 
-        // Small delay to avoid maxing out CPU
+        // Small delay to control emulation speed and prevent high CPU usage
         SDL_Delay(1);
     }
 
-    // 9) Cleanup
-    TTF_CloseFont(font);
-    TTF_Quit();
+    // 8) Cleanup
     sdl_cleanup(&sdl);
 
     if (app_cfg.audio_cfg.enabled)
