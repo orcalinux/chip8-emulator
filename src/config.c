@@ -35,7 +35,9 @@ void print_usage(const char *prog_name, bool to_stderr)
             "Options (Audio):\n"
             "  -A, --audio <on|off>       Enable or disable audio (default: on)\n"
             "  -W, --wav <path>           Path to beep sound file (default: assets/beep.wav)\n"
-            "  -V, --vol <volume>         Set audio volume (0-128, default: 128)\n\n",
+            "  -V, --vol <volume>         Set audio volume (0-128, default: 128)\n\n"
+            "Other Options:\n"
+            "  -?, --help                 Show this help message and exit\n",
             prog_name);
 }
 
@@ -84,6 +86,13 @@ static bool parse_config_windows(app_config_t *config, int argc, char *argv[])
     while (g_win_optind < argc)
     {
         const char *arg = argv[g_win_optind];
+
+        // Help flag
+        if ((strcmp(arg, "-?") == 0 || strcmp(arg, "--help") == 0))
+        {
+            print_usage(argv[0], true);
+            exit(EXIT_SUCCESS); // Exit after showing help
+        }
 
         // Display flags
         if ((strcmp(arg, "-w") == 0 || strcmp(arg, "--width") == 0) && (g_win_optind + 1 < argc))
@@ -185,6 +194,9 @@ static bool parse_config_unix(app_config_t *config, int argc, char *argv[])
         {"audio", required_argument, NULL, 'A'},
         {"wav", required_argument, NULL, 'W'},
         {"vol", required_argument, NULL, 'V'},
+
+        // Help
+        {"help", no_argument, NULL, 0},
         {NULL, 0, NULL, 0}};
 
     // Reset or ensure fresh parse
@@ -194,7 +206,8 @@ static bool parse_config_unix(app_config_t *config, int argc, char *argv[])
     int opt;
     int option_index = 0;
 
-    while ((opt = getopt_long(argc, argv, "w:h:s:f:b:A:W:V:", long_opts, &option_index)) != -1)
+    while ((opt = getopt_long(argc, argv, "w:h:s:f:b:A:W:V:?",
+                              long_opts, &option_index)) != -1)
     {
         switch (opt)
         {
@@ -243,6 +256,21 @@ static bool parse_config_unix(app_config_t *config, int argc, char *argv[])
             config->audio_cfg.volume = vol;
             break;
         }
+
+        // Help
+        case 0:
+            if (strcmp(long_opts[option_index].name, "help") == 0)
+            {
+                print_usage(argv[0], false);
+                exit(EXIT_SUCCESS); // Exit after showing help
+            }
+            break;
+
+        // Handle -? as help
+        case '?':
+            print_usage(argv[0], true);
+            exit(EXIT_SUCCESS); // Exit after showing help
+
         default:
             return false;
         }
