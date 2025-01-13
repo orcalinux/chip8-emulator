@@ -51,18 +51,18 @@ static bool parse_config_unix(app_config_t *config, int argc, char *argv[]);
 bool parse_config(app_config_t *config, int argc, char *argv[])
 {
     // Initialize default display
-    config->display_cfg.window_width = 640;
-    config->display_cfg.window_height = 320;
-    config->display_cfg.fg_color = 0xFFFFFFFF;
-    config->display_cfg.bg_color = 0x00000000;
-    config->display_cfg.scale_factor = 10;
+    config->display_cfg.window_width = CONFIG_DEFAULT_WINDOW_WIDTH;
+    config->display_cfg.window_height = CONFIG_DEFAULT_WINDOW_HEIGHT;
+    config->display_cfg.fg_color = CONFIG_DEFAULT_FG_COLOR;
+    config->display_cfg.bg_color = CONFIG_DEFAULT_BG_COLOR;
+    config->display_cfg.scale_factor = CONFIG_DEFAULT_SCALE_FACTOR;
 
     // Initialize default audio
     config->audio_cfg.enabled = true;
-    strncpy(config->audio_cfg.wav_path, "assets/beep.wav",
+    strncpy(config->audio_cfg.wav_path, CONFIG_DEFAULT_WAV_PATH,
             sizeof(config->audio_cfg.wav_path) - 1);
     config->audio_cfg.wav_path[sizeof(config->audio_cfg.wav_path) - 1] = '\0';
-    config->audio_cfg.volume = 128;
+    config->audio_cfg.volume = CONFIG_DEFAULT_VOLUME;
 
     // ROM path default
     config->rom_path[0] = '\0';
@@ -82,6 +82,9 @@ static bool parse_config_windows(app_config_t *config, int argc, char *argv[])
 {
     // Start from the first real argument
     g_win_optind = 1;
+    bool scale_set = false;
+    bool width_set = false;
+    bool height_set = false;
 
     while (g_win_optind < argc)
     {
@@ -97,17 +100,32 @@ static bool parse_config_windows(app_config_t *config, int argc, char *argv[])
         // Display flags
         if ((strcmp(arg, "-w") == 0 || strcmp(arg, "--width") == 0) && (g_win_optind + 1 < argc))
         {
+            if (scale_set)
+            {
+                print_warning("Option -w/--width ignored because -s/--scale is set.");
+                g_win_optind++;
+                continue;
+            }
             config->display_cfg.window_width = atoi(argv[++g_win_optind]);
+            width_set = true;
         }
         else if ((strcmp(arg, "-h") == 0 || strcmp(arg, "--height") == 0) && (g_win_optind + 1 < argc))
         {
+            if (scale_set)
+            {
+                print_warning("Option -h/--height ignored because -s/--scale is set.");
+                g_win_optind++;
+                continue;
+            }
             config->display_cfg.window_height = atoi(argv[++g_win_optind]);
+            height_set = true;
         }
         else if ((strcmp(arg, "-s") == 0 || strcmp(arg, "--scale") == 0) && (g_win_optind + 1 < argc))
         {
             config->display_cfg.scale_factor = atoi(argv[++g_win_optind]);
             config->display_cfg.window_width = 64 * config->display_cfg.scale_factor;
             config->display_cfg.window_height = 32 * config->display_cfg.scale_factor;
+            scale_set = true;
         }
         else if ((strcmp(arg, "-f") == 0 || strcmp(arg, "--fg") == 0) && (g_win_optind + 1 < argc))
         {
@@ -160,6 +178,12 @@ static bool parse_config_windows(app_config_t *config, int argc, char *argv[])
         g_win_optind++;
     }
 
+    // Check for conflicting options
+    if (scale_set && (width_set || height_set))
+    {
+        print_warning("Options -w/--width and -h/--height are ignored when -s/--scale is set.");
+    }
+
     // If we STILL have no ROM path but there’s leftover
     if (config->rom_path[0] == '\0' && g_win_optind < argc)
     {
@@ -205,6 +229,9 @@ static bool parse_config_unix(app_config_t *config, int argc, char *argv[])
 
     int opt;
     int option_index = 0;
+    bool scale_set = false;
+    bool width_set = false;
+    bool height_set = false;
 
     while ((opt = getopt_long(argc, argv, "w:h:s:f:b:A:W:V:?",
                               long_opts, &option_index)) != -1)
@@ -213,15 +240,28 @@ static bool parse_config_unix(app_config_t *config, int argc, char *argv[])
         {
         // Display
         case 'w':
+            if (scale_set)
+            {
+                print_warning("Option -w/--width ignored because -s/--scale is set.");
+                break;
+            }
             config->display_cfg.window_width = atoi(optarg);
+            width_set = true;
             break;
         case 'h':
+            if (scale_set)
+            {
+                print_warning("Option -h/--height ignored because -s/--scale is set.");
+                break;
+            }
             config->display_cfg.window_height = atoi(optarg);
+            height_set = true;
             break;
         case 's':
             config->display_cfg.scale_factor = atoi(optarg);
             config->display_cfg.window_width = 64 * config->display_cfg.scale_factor;
             config->display_cfg.window_height = 32 * config->display_cfg.scale_factor;
+            scale_set = true;
             break;
         case 'f':
             config->display_cfg.fg_color = strtoul(optarg, NULL, 16);
@@ -274,6 +314,12 @@ static bool parse_config_unix(app_config_t *config, int argc, char *argv[])
         default:
             return false;
         }
+    }
+
+    // Check for conflicting options
+    if (scale_set && (width_set || height_set))
+    {
+        print_warning("Options -w/--width and -h/--height are ignored when -s/--scale is set.");
     }
 
     // leftover argument for ROM

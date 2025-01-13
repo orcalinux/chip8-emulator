@@ -14,6 +14,17 @@
 #include <stdbool.h>
 
 /**
+ * @brief Default configuration values for the CHIP-8 emulator.
+ */
+#define CONFIG_DEFAULT_WINDOW_WIDTH 640           /**< Default width of the SDL window */
+#define CONFIG_DEFAULT_WINDOW_HEIGHT 320          /**< Default height of the SDL window */
+#define CONFIG_DEFAULT_FG_COLOR 0xFFFFFFFF        /**< Default foreground color (white) */
+#define CONFIG_DEFAULT_BG_COLOR 0x00000000        /**< Default background color (black) */
+#define CONFIG_DEFAULT_SCALE_FACTOR 10            /**< Default scale factor for enlarging the display */
+#define CONFIG_DEFAULT_WAV_PATH "assets/beep.wav" /**< Default path to the beep .wav file */
+#define CONFIG_DEFAULT_VOLUME 128                 /**< Default audio volume (0-128) */
+
+/**
  * @struct display_config_t
  * @brief Holds display/window configuration parameters for the emulator.
  */
