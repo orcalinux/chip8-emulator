@@ -100,7 +100,7 @@ typedef struct
     bool display[64 * 32]; /**< 2048 bytes if bool is 1 byte */
 
     /* Largest array last: 4K memory */
-    uint8_t memory[CHIP8_MEMORY_SIZE]; /**< 4096 bytes */
+    uint8_t memory[4096]; /**< 4096 bytes */
 
     /* Decoded instruction */
     chip8_instr_t current_instr; /**< Holds the currently decoded instruction */

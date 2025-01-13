@@ -7,6 +7,7 @@
  */
 
 #include "audio.h"
+#include "cli_logger.h"
 #include <SDL2/SDL_mixer.h>
 #include <stdio.h>
 
