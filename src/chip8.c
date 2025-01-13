@@ -283,7 +283,7 @@ static void handle_drw_vx_vy_n(chip8_t *emu, chip8_instr_t instr)
     uint8_t y = emu->V[instr.y] % 32; // Fixed screen height for CHIP-8
     uint8_t height = instr.n;
 
-    print_debug("Drawing sprite at (%d, %d) with height %d, I=0x%03X", x, y, height, emu->I);
+    // print_debug("Drawing sprite at (%d, %d) with height %d, I=0x%03X", x, y, height, emu->I);
 
     emu->V[0xF] = 0; // Reset collision flag
 
@@ -297,7 +297,7 @@ static void handle_drw_vx_vy_n(chip8_t *emu, chip8_instr_t instr)
         }
 
         uint8_t sprite_byte = emu->memory[emu->I + row];
-        print_debug("Sprite row %d: 0x%02X", row, sprite_byte);
+        // print_debug("Sprite row %d: 0x%02X", row, sprite_byte);
 
         for (uint8_t col = 0; col < 8; col++)
         {
@@ -315,7 +315,7 @@ static void handle_drw_vx_vy_n(chip8_t *emu, chip8_instr_t instr)
             uint8_t *screen_pixel = &emu->display[screen_idx];
 
             // Debug: Print pixel status before XOR
-            print_debug("Pixel before: %d, Sprite pixel: %d at (%d, %d)", *screen_pixel, pixel, dst_x, dst_y);
+            // print_debug("Pixel before: %d, Sprite pixel: %d at (%d, %d)", *screen_pixel, pixel, dst_x, dst_y);
 
             if (*screen_pixel && pixel)
                 emu->V[0xF] = 1;
@@ -323,7 +323,7 @@ static void handle_drw_vx_vy_n(chip8_t *emu, chip8_instr_t instr)
             *screen_pixel ^= pixel;
 
             // Debug: Print pixel status after XOR
-            print_debug("Pixel after: %d at (%d, %d)", *screen_pixel, dst_x, dst_y);
+            // print_debug("Pixel after: %d at (%d, %d)", *screen_pixel, dst_x, dst_y);
         }
     }
 
